@@ -64,7 +64,7 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
         return -1;
     }
 
-    if (size & 0x80) {
+    if (size & HAS_NEXT_BYTE) {
         int octetosTamanho = size & 0x7F;
 
         uint32_t ret = 0;
@@ -73,19 +73,14 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
             ++*tlvObject;
              --*length;
         }
+    } else {
+        ret = *tlvObject & 0x1F;
     }
 
     ident_output(ident);
-    // Check next byte
-    if (*tlvObject & HAS_NEXT_BYTE) {
-        // TODO support variable length sizes
-        printf("--ERROR: Variable length not implemented.\n");
-        return -1;
-    } else {
-        ret = *tlvObject & 0x1F;
-        printf("LEN - %d bytes\n", ret);
-    }
+    printf("LEN - %d bytes\n", ret);
 
+    // Data part
     ++tlvObject;
     --*length;
     if (tag & CLASS_CONSTRUCTED) {
@@ -93,6 +88,7 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
         printf("\n");
         loop_ber_tlv(tlvObject, length, ++ident);
     } else if (ret) {
+        // Primitive - just print out the data
         ident_output(ident);
         printf("VAL -");
         for (int i = 0; i < ret && i < *length; ++i) {
@@ -106,7 +102,7 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
 
     *length -= ret;
 
-    return ret + 2; // TODO support variable length sizes
+    return ret + 2;
 }
 
 void loop_ber_tlv(uint8_t *tlvObject, int *length, int ident)
