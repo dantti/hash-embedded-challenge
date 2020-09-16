@@ -21,6 +21,7 @@ void ident_output(int ident)
 int decode_tag(uint8_t *tlvObject, int *length, int ident)
 {
     int ret = -1;
+    int bytes_consumed = 1;
     // First byte - tag type
     uint8_t tag = *tlvObject;
     if (*length <= 1) {
@@ -50,6 +51,7 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
         do {
             ++tlvObject;
             --*length;
+            ++bytes_consumed;
             tag = *tlvObject;
         } while (tag & 0x80);
     }
@@ -57,6 +59,7 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
     // Next byte - tag length
     ++tlvObject;
     --*length;
+    ++bytes_consumed;
 
     uint8_t size = *tlvObject;
     if (size == 0x80) {
@@ -72,6 +75,7 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
             size = ret << 8 | *tlvObject;
             ++*tlvObject;
              --*length;
+            ++bytes_consumed;
         }
     } else {
         ret = *tlvObject & 0x1F;
@@ -102,7 +106,7 @@ int decode_tag(uint8_t *tlvObject, int *length, int ident)
 
     *length -= ret;
 
-    return ret + 2;
+    return ret + bytes_consumed;
 }
 
 void loop_ber_tlv(uint8_t *tlvObject, int *length, int ident)
